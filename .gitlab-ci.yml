@@ -1,0 +1,24 @@
+stages:
+  - test
+  - security
+
+# Étape pour exécuter les tests de sécurité avec Bandit
+sast_scan:
+  stage: test
+  script:
+    - ./tests/test_security.sh
+  artifacts:
+    paths:
+      - bandit_report.json
+
+# Étape pour importer le rapport dans DefectDojo
+import_to_defectdojo:
+  stage: security
+  script:
+    - 'curl -X POST "http://localhost:8080/api/v2/import-scan/" \
+      -H "Authorization: Token $DEFECTDOJO_API_TOKEN" \
+      -F "scan_type=SAST" \
+      -F "file=@bandit_report.json" \
+      -F "product_id=$DEFECTDOJO_PRODUCT_ID"'
+  only:
+    - main
